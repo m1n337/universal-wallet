@@ -1,0 +1,35 @@
+{
+  "name": "universal-wallet",
+  "productName": "UniversalWallet",
+  "version": "0.0.1",
+  "description": "An universwal blockchain wallet in terminal",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "author": {
+    "name": "M1ner",
+    "email": "m1n337b@gmail.com",
+    "url": "https://github.com/m1n337"
+  },
+  "bin": {
+    "uwallet": "./cli.js"
+  },
+  "scripts": {
+    "lint": "eslint . --fix"
+  },
+  "dependencies": {
+    "bip39": "^3.1.0",
+    "commander": "^11.1.0",
+    "ethereumjs-util": "^7.1.5",
+    "ethereumjs-wallet": "^1.0.2",
+    "ethers": "^6.9.2",
+    "inquirer": "^9.2.12",
+    "pino": "^8.17.2",
+    "pino-pretty": "^10.3.1"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0 || ^8.2.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.25.2"
+  }
+}
