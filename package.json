@@ -26,7 +26,7 @@
   "lint-staged": {
     "*.js": [
       "yarn lint",
-      "git add"
+      "git add ."
     ]
   },
   "dependencies": {
