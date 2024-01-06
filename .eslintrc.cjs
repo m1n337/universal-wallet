@@ -27,6 +27,7 @@ module.exports = {
     'no-plusplus': 'off',
     'new-cap': 'off',
     'no-console': 'off',
+    'class-methods-use-this': 'off',
     'max-len': ['error', { code: 150 }],
   },
 };

@@ -87,7 +87,7 @@ export const evmHandler = async (options) => {
     console.log(mnemonic);
     eth.fromMnemonic(mnemonic);
   } else if (options.private) {
-    const answers = await inquirer.prompt([
+    let answers = await inquirer.prompt([
       {
         type: 'password',
         message: 'Enter your private key:',
@@ -99,16 +99,15 @@ export const evmHandler = async (options) => {
       const wallet = eth.fromPrivateKey(answers.private);
       if (options.save) {
         const dir = options.save;
-        console.log(dir);
-        const panswers = await inquirer.prompt(passwordQuestions);
-        if (panswers.password) {
+        answers = await inquirer.prompt(passwordQuestions);
+        if (answers.password) {
           eth.saveWallet(wallet, answers.password, dir);
         } else {
           logger.error('Input empty password');
         }
       }
     } else {
-      console.error('Invalid mnemonic input');
+      logger.error('Invalid mnemonic input');
     }
   } else if (options.recover) {
     const filePath = options.recover;

@@ -12,10 +12,11 @@
     "url": "https://github.com/m1n337"
   },
   "bin": {
-    "uwallet": "./cli.js"
+    "uwallet": "./src/cli.js"
   },
   "scripts": {
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix",
+    "lint-watch": "nodemon --watch 'src/**/*.js' --watch 'cli.js' --exec 'yarn lint'"
   },
   "dependencies": {
     "bip39": "^3.1.0",
@@ -30,6 +31,7 @@
   "devDependencies": {
     "eslint": "^7.32.0 || ^8.2.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.25.2"
+    "eslint-plugin-import": "^2.25.2",
+    "nodemon": "^3.0.2"
   }
 }

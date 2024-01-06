@@ -11,38 +11,36 @@ import { logger } from '../utils/logger.js';
 
 export class EvmWallet {
   constructor() {
-    this.provider = new ethers.getDefaultProvider('https:/rpc.ankr.com/eth');
+    this.provider = new ethers.JsonRpcProvider('https://rpc.ankr.com/eth');
     this.keyMap = {};
     // this.provider = new InfuraProvider('mainnet', '072a6ccaaa1d4c059427b830eba0f320');
   }
 
-  // async _fetchENSName(address) {
-  //     try {
-  //         const ensName = await this.provider.lookupAddress(address);
+  async fetchENSName(address) {
+    try {
+      const ensName = await this.provider.lookupAddress(address);
 
-  //         if (ensName) {
-  //             return ensName;
-  //         } else {
-  //             throw Error("No ENS name found")
-  //         }
-  //     } catch (error) {
-  //         pino.Error("Failed to fetchENSName: ", error)
-  //     }
-  // }
+      if (ensName) {
+        return ensName;
+      }
+    } catch (error) {
+      logger.error('Failed to fetchENSName: ', error);
+    }
 
-  // async getSeed(mnemonic) {
-  //     let seed = await mnemonicToSeed(mnemonic)
-  //     console.log("seed: " + bufferToHex(seed))
+    return '';
+  }
 
-  //     return seed
-  // }
+  //   async getSeed(mnemonic) {
+  //     const seed = await mnemonicToSeed(mnemonic);
+  //     console.log(`seed: ${bufferToHex(seed)}`);
+
+  //     return seed;
+  //   }
 
   fromPrivateKey(pk) {
     // const wallet = ethers.HDNodeWallet.fromSeed(pk).derivePath(ethers.defaultPath);
     const wallet = new ethers.Wallet(pk, this.provider);
-
-    logger.info(wallet);
-    // logger.info("The wallet is derived from the privarte key: ", wallet.address);
+    logger.info('The wallet is derived from the privarte key: ', wallet.address);
 
     return wallet;
   }
@@ -67,7 +65,7 @@ export class EvmWallet {
     return wallet;
   }
 
-  static generateAccount(password) {
+  generateAccount(password) {
     const wallet = ethers.HDNodeWallet.createRandom(password);
     logger.info(`[LOG] Account generated: ${wallet.address}`);
 
@@ -102,15 +100,24 @@ export class EvmWallet {
   //    };
   // })));
 
-  static recoverFromEncryptJson(password, encryptJson) {
-    const wallet = ethers.Wallet.fromEncryptedJsonSync(encryptJson, password);
+  recoverFromEncryptJson(password, encryptJson) {
+    const w = ethers.Wallet.fromEncryptedJsonSync(encryptJson, password);
+    const wallet = w.connect(this.provider);
+    logger.info(`Private key is ${wallet.privateKey}`);
     logger.info(`The wallet recovered: ${JSON.stringify(wallet)}`);
     return wallet;
   }
 
-  saveWallet(wallet, password, dir) {
+  async saveWallet(wallet, password, dir) {
     const encryptJson = wallet.encryptSync(password);
-    const filePath = join(dir, `${wallet.address}.json`);
+    let ensPrefix = '';
+    try {
+      ensPrefix = await this.fetchENSName(wallet.address);
+      ensPrefix = ensPrefix !== '' ? `${ensPrefix}-` : ensPrefix;
+    } catch {
+      logger.info('Not found ens with address: ', wallet.address);
+    }
+    const filePath = join(dir, `${ensPrefix}${wallet.address}.json`);
     logger.info(`The wallet is saved to: ${filePath.toString()}`);
     this.keyMap[wallet.address] = filePath;
     writeFileSync(filePath, encryptJson);
