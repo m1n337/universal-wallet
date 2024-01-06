@@ -18,6 +18,14 @@
     "lint": "eslint . --fix",
     "lint-watch": "nodemon --watch 'src/**/*.js' --watch 'cli.js' --exec 'yarn lint'"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.js": "yarn lint"
+  },
   "dependencies": {
     "bip39": "^3.1.0",
     "commander": "^11.1.0",
@@ -32,6 +40,8 @@
     "eslint": "^7.32.0 || ^8.2.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.25.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
     "nodemon": "^3.0.2"
   }
 }

@@ -11,7 +11,7 @@ program
   .version('0.0.1');
 
 program
-  .command('evm')
+    .command('evm')
   .description('Ethereum wallet managemen')
   .option('-g, --generate [number]', 'Generate ethereum account')
   .option('-m, --mnemonic', 'Enter mnemonic interactively')
