@@ -1,47 +1,50 @@
 import { readFileSync } from 'fs';
+import { exec } from 'child_process';
+import process from 'process';
 
 import inquirer from 'inquirer';
+
 import { EvmWallet } from '../chains/index.js';
 import { logger } from '../utils/logger.js';
+import { passwordQuestions } from './utils.js';
 
 export const evmHandler = async (options) => {
   const eth = new EvmWallet();
-  const passwordQuestions = [
-    {
-      type: 'password',
-      message: 'Enter your password:',
-      name: 'password',
-      mask: '*',
-      validate(value) {
-        if (value.length < 6) {
-          return 'Password should be at least 6 characters.';
-        }
-        return true;
-      },
-    },
-    {
-      type: 'password',
-      name: 'confirmPassword',
-      message: 'Confirm your password:',
-      mask: '*',
-      validate(value, answers) {
-        if (value !== answers.password) {
-          return 'Passwords do not match.';
-        }
-        return true;
-      },
-    },
-  ];
 
+  if (options.recover) {
+    const filePath = options.recover;
+    const data = readFileSync(filePath);
+    const answers = await inquirer.prompt(passwordQuestions);
+    const wallet = eth.recoverFromEncryptJson(answers.password, data);
+    if (options.exec) {
+      const cmd = options.exec;
+      process.env.PK = wallet.privateKey;
+      exec(cmd, (error, stdout, stderr) => {
+        if (error) {
+          logger.error(`Failed to exec ${cmd} with error ${error}`);
+          return;
+        }
+        if (stdout) {
+          console.log(stdout);
+        }
+        if (stderr) {
+          console.error(stderr);
+        }
+      });
+    }
+    return;
+  }
+  const wallets = [];
   if (options.generate) {
     const answers = await inquirer.prompt(passwordQuestions);
     if (options.generate === true) {
       const acc = eth.generateAccount(answers.password);
-
-      console.log(acc);
-      console.log(eth.recoverFromEncryptJson(answers.password, acc.encryptJson));
+      wallets.push(acc.wallet);
     } else {
-      console.log(eth.batchGenerateAccount(answers.password, options.generate));
+      const accs = eth.batchGenerateAccount(answers.password, options.generate);
+      accs.forEach((item) => {
+        wallets.push(item.wallet);
+      });
     }
   } else if (options.mnemonic) {
     const mnemonics = [];
@@ -59,10 +62,10 @@ export const evmHandler = async (options) => {
         if (num < 12) {
           await inputMnemonic(num + 1);
         } else {
-          console.log('Exiting...');
+          logger.info('Exiting...');
         }
       } else {
-        console.error('ERROR');
+        logger.error('ERROR');
       }
     };
     let mnemonic;
@@ -81,13 +84,12 @@ export const evmHandler = async (options) => {
       if (answers.mnemonic) {
         mnemonic = answers.mnemonic;
       } else {
-        console.error('Invalid mnemonic input');
+        logger.error('Invalid mnemonic input');
       }
     }
-    console.log(mnemonic);
-    eth.fromMnemonic(mnemonic);
+    wallets.push(eth.fromMnemonic(mnemonic));
   } else if (options.private) {
-    let answers = await inquirer.prompt([
+    const answers = await inquirer.prompt([
       {
         type: 'password',
         message: 'Enter your private key:',
@@ -96,23 +98,20 @@ export const evmHandler = async (options) => {
       },
     ]);
     if (answers.private) {
-      const wallet = eth.fromPrivateKey(answers.private);
-      if (options.save) {
-        const dir = options.save;
-        answers = await inquirer.prompt(passwordQuestions);
-        if (answers.password) {
-          eth.saveWallet(wallet, answers.password, dir);
-        } else {
-          logger.error('Input empty password');
-        }
-      }
+      wallets.push(eth.fromPrivateKey(answers.private));
     } else {
       logger.error('Invalid mnemonic input');
     }
-  } else if (options.recover) {
-    const filePath = options.recover;
-    const data = readFileSync(filePath);
+  }
+  if (options.save) {
+    const dir = options.save;
     const answers = await inquirer.prompt(passwordQuestions);
-    eth.recoverFromEncryptJson(answers.password, data);
+    if (answers.password) {
+      wallets.forEach((item) => {
+        eth.saveWallet(item, answers.password, dir);
+      });
+    } else {
+      logger.error('Input empty password');
+    }
   }
 };

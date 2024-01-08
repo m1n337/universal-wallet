@@ -30,8 +30,10 @@
     ]
   },
   "dependencies": {
+    "@cosmjs/proto-signing": "^0.32.2",
     "bip39": "^3.1.0",
     "commander": "^11.1.0",
+    "cosmos-lib": "^1.1.0",
     "ethereumjs-util": "^7.1.5",
     "ethereumjs-wallet": "^1.0.2",
     "ethers": "^6.9.2",

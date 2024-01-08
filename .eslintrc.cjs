@@ -29,5 +29,12 @@ module.exports = {
     'no-console': 'off',
     'class-methods-use-this': 'off',
     'max-len': ['error', { code: 150 }],
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: 'ForOfStatement',
+        message: 'for...of statements are not allowed.',
+      },
+    ],
   },
 };

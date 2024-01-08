@@ -60,8 +60,6 @@ export class EvmWallet {
 
     const wallet = ethers.Wallet.fromPhrase(mnemonic, this.provider);
 
-    logger.info('The wallet is derived from the mnemonic: ', wallet);
-
     return wallet;
   }
 
@@ -71,7 +69,7 @@ export class EvmWallet {
 
     const encryptJson = wallet.encryptSync(password);
     return {
-      address: wallet.address,
+      wallet,
       mnemonic: wallet.mnemonic?.phrase,
       encryptJson,
     };
@@ -118,7 +116,7 @@ export class EvmWallet {
       logger.info('Not found ens with address: ', wallet.address);
     }
     const filePath = join(dir, `${ensPrefix}${wallet.address}.json`);
-    logger.info(`The wallet is saved to: ${filePath.toString()}`);
+    logger.info(`The wallet ${wallet.address} is saved to: ${filePath.toString()}`);
     this.keyMap[wallet.address] = filePath;
     writeFileSync(filePath, encryptJson);
   }
