@@ -13,7 +13,7 @@ export class EvmWallet {
   constructor() {
     this.provider = new ethers.JsonRpcProvider('https://rpc.ankr.com/eth');
     this.keyMap = {};
-    // this.provider = new InfuraProvider('mainnet', '072a6ccaaa1d4c059427b830eba0f320');
+    // this.provider = new InfuraProvider('mainnet', '');
   }
 
   async fetchENSName(address) {
@@ -40,7 +40,9 @@ export class EvmWallet {
   fromPrivateKey(pk) {
     // const wallet = ethers.HDNodeWallet.fromSeed(pk).derivePath(ethers.defaultPath);
     const wallet = new ethers.Wallet(pk, this.provider);
-    logger.info('The wallet is derived from the privarte key: ', wallet.address);
+    // logger.info('The wallet is derived from the privarte key: ', wallet.address);
+    console.log('- Successfully imported your wallet from the private key:');
+    this.print_wallet_info(wallet);
 
     return wallet;
   }
@@ -59,30 +61,27 @@ export class EvmWallet {
     // console.log('account address: ', "0x"+address.toString('hex'))
 
     const wallet = ethers.Wallet.fromPhrase(mnemonic, this.provider);
+    console.log('- Successfully imported your wallet from mnemonic:');
+    this.print_wallet_info(wallet);
 
     return wallet;
   }
 
-  generateAccount(password) {
-    const wallet = ethers.HDNodeWallet.createRandom(password);
-    logger.info(`[LOG] Account generated: ${wallet.address}`);
-
-    const encryptJson = wallet.encryptSync(password);
-    return {
-      wallet,
-      mnemonic: wallet.mnemonic?.phrase,
-      encryptJson,
-    };
+  #generateWallet() {
+    const wallet = ethers.HDNodeWallet.createRandom();
+    console.log('- Successfully generated wallet:');
+    this.print_wallet_info(wallet);
+    return wallet;
   }
 
-  batchGenerateAccount(password, num) {
-    const accs = [];
+  batchGenerateWallets(num) {
+    const wallets = [];
     for (let i = 0; i < num; i++) {
-      const acc = this.generateAccount(password);
-      accs.push(acc);
+      const wallet = this.#generateWallet();
+      wallets.push(wallet);
     }
 
-    return accs;
+    return wallets;
   }
 
   // [Action-1]: Generate num accounts
@@ -101,23 +100,52 @@ export class EvmWallet {
   recoverFromEncryptJson(password, encryptJson) {
     const w = ethers.Wallet.fromEncryptedJsonSync(encryptJson, password);
     const wallet = w.connect(this.provider);
-    logger.info(`Private key is ${wallet.privateKey}`);
-    logger.info(`The wallet recovered: ${JSON.stringify(wallet)}`);
+    console.log('- Successful recovered your wallet:');
+    this.print_wallet_info(wallet);
     return wallet;
   }
 
-  async saveWallet(wallet, password, dir) {
+  async saveWallet(wallet, password, dir, name) {
     const encryptJson = wallet.encryptSync(password);
     let ensPrefix = '';
     try {
       ensPrefix = await this.fetchENSName(wallet.address);
-      ensPrefix = ensPrefix !== '' ? `${ensPrefix}-` : ensPrefix;
     } catch {
       logger.info('Not found ens with address: ', wallet.address);
     }
-    const filePath = join(dir, `${ensPrefix}${wallet.address}.json`);
-    logger.info(`The wallet ${wallet.address} is saved to: ${filePath.toString()}`);
+
+    let prefix = ensPrefix;
+    if (prefix === '' && name) {
+      prefix = name;
+    }
+
+    if (prefix !== '') {
+      prefix = `${prefix}-`;
+    }
+    const filePath = join(dir, `${prefix}${wallet.address}.json`);
+    const mmPath = join(dir, `.${prefix}${wallet.address}.json`);
+    const walletPrefix = wallet.address.slice(0, 10);
+    const walletSuffix = wallet.address.slice(34);
+    console.log(`- wallet ${walletPrefix}..${walletSuffix} is saved to: ${filePath.toString()}`);
     this.keyMap[wallet.address] = filePath;
     writeFileSync(filePath, encryptJson);
+
+    // save keyMap
+    if (wallet.mnemonic) writeFileSync(mmPath, wallet.mnemonic.phrase);
+  }
+
+  print_wallet_info(w) {
+    let maxLen;
+    if (w.mnemonic) {
+      maxLen = w.mnemonic.phrase.length + 22;
+    } else {
+      maxLen = 100;
+    }
+    const sep = `  ${'-'.repeat(maxLen + 3)}`;
+    console.log(sep);
+    console.log(`|>   [LOG] address: ${w.address}${' '.repeat(maxLen - 57)}|`);
+    if (w.mnemonic) console.log(`|>   [LOG] *mnemonic: ${w.mnemonic?.phrase}     |`);
+    console.log(`|>   [LOG] *private key: ${w.privateKey}${' '.repeat(maxLen - 86)}|`);
+    console.log(sep);
   }
 }

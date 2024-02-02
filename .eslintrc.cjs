@@ -29,6 +29,7 @@ module.exports = {
     'no-console': 'off',
     'class-methods-use-this': 'off',
     'max-len': ['error', { code: 150 }],
+    'no-use-before-define': 'off',
     'no-restricted-syntax': [
       'error',
       {

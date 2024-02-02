@@ -3,7 +3,7 @@
   "productName": "UniversalWallet",
   "version": "0.0.1",
   "description": "An universwal blockchain wallet in terminal",
-  "main": "index.js",
+  "main": "src/index.js",
   "license": "MIT",
   "type": "module",
   "author": {
@@ -12,7 +12,7 @@
     "url": "https://github.com/m1n337"
   },
   "bin": {
-    "uwallet": "./src/cli.js"
+    "uwallet": "./cli.js"
   },
   "scripts": {
     "lint": "eslint . --fix",

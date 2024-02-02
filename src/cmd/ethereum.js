@@ -1,3 +1,5 @@
+import { homedir } from 'os';
+import { join } from 'path';
 import { readFileSync } from 'fs';
 import { exec } from 'child_process';
 import process from 'process';
@@ -8,45 +10,87 @@ import { EvmWallet } from '../chains/index.js';
 import { logger } from '../utils/logger.js';
 import { passwordQuestions } from './utils.js';
 
-export const evmHandler = async (options) => {
-  const eth = new EvmWallet();
+const DEFAULT_KEYSTORE = join(homedir(), '.keystore');
 
-  if (options.recover) {
-    const filePath = options.recover;
-    const data = readFileSync(filePath);
+const eth = new EvmWallet();
+
+const saveWalletOptionHandler = async (wallets, options) => {
+  if (options === undefined) return;
+  if (options && options.save) {
+    let dir;
+    if (options.save === true) {
+      dir = DEFAULT_KEYSTORE;
+    } else {
+      dir = options.save;
+    }
+
     const answers = await inquirer.prompt(passwordQuestions);
-    const wallet = eth.recoverFromEncryptJson(answers.password, data);
-    if (options.exec) {
-      const cmd = options.exec;
-      process.env.PK = wallet.privateKey;
-      exec(cmd, (error, stdout, stderr) => {
-        if (error) {
-          logger.error(`Failed to exec ${cmd} with error ${error}`);
+    if (answers.password) {
+      let labels = [];
+      if (options.label) {
+        labels = options.label.split(',');
+        if (labels.length !== 1 && labels.length !== wallets.length) {
+          logger.error('Failed: lables number does not match wallets number');
           return;
         }
-        if (stdout) {
-          console.log(stdout);
+      }
+      wallets.forEach((item, index) => {
+        let label;
+        if (labels.length === 0) {
+          label = undefined;
+        } else if (labels.length === 1) {
+          label = options.label;
+        } else {
+          label = labels[index];
         }
-        if (stderr) {
-          console.error(stderr);
-        }
+
+        eth.saveWallet(item, answers.password, dir, label);
       });
-    }
-    return;
-  }
-  const wallets = [];
-  if (options.generate) {
-    const answers = await inquirer.prompt(passwordQuestions);
-    if (options.generate === true) {
-      const acc = eth.generateAccount(answers.password);
-      wallets.push(acc.wallet);
     } else {
-      const accs = eth.batchGenerateAccount(answers.password, options.generate);
-      accs.forEach((item) => {
-        wallets.push(item.wallet);
+      logger.error('Input empty password');
+    }
+  }
+};
+
+const execOptionHandler = async (wallets, options) => {
+  if (options === undefined) return;
+  if (options.exec) {
+    const cmd = options.exec;
+    if (wallets.length === 1) {
+      process.env.PK = wallets[0].privateKey;
+    } else {
+      wallets.forEach((wallet, index) => {
+        process.env[`PK_${index + 1}`] = wallet.privateKey;
       });
     }
-  } else if (options.mnemonic) {
+    exec(cmd, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Failed to exec ${cmd} with error ${error}`);
+        return;
+      }
+      if (stdout) {
+        console.log(stdout);
+      }
+      if (stderr) {
+        console.error(stderr);
+      }
+    });
+  }
+};
+
+export const evmGenHandler = async (num, options) => {
+  const numToGenerate = num || 1;
+  const wallets = eth.batchGenerateWallets(numToGenerate);
+
+  await saveWalletOptionHandler(wallets, options);
+
+  await execOptionHandler(wallets, options);
+};
+
+export const evmImportHandler = async (options) => {
+  let wallet;
+
+  if (options.mnemonic) {
     const mnemonics = [];
     const inputMnemonic = async (num) => {
       const answers = await inquirer.prompt([
@@ -61,8 +105,6 @@ export const evmHandler = async (options) => {
         mnemonics.push(answers.mnemonic);
         if (num < 12) {
           await inputMnemonic(num + 1);
-        } else {
-          logger.info('Exiting...');
         }
       } else {
         logger.error('ERROR');
@@ -87,7 +129,7 @@ export const evmHandler = async (options) => {
         logger.error('Invalid mnemonic input');
       }
     }
-    wallets.push(eth.fromMnemonic(mnemonic));
+    wallet = eth.fromMnemonic(mnemonic);
   } else if (options.private) {
     const answers = await inquirer.prompt([
       {
@@ -98,20 +140,21 @@ export const evmHandler = async (options) => {
       },
     ]);
     if (answers.private) {
-      wallets.push(eth.fromPrivateKey(answers.private));
+      wallet = eth.fromPrivateKey(answers.private);
     } else {
       logger.error('Invalid mnemonic input');
     }
   }
-  if (options.save) {
-    const dir = options.save;
-    const answers = await inquirer.prompt(passwordQuestions);
-    if (answers.password) {
-      wallets.forEach((item) => {
-        eth.saveWallet(item, answers.password, dir);
-      });
-    } else {
-      logger.error('Input empty password');
-    }
-  }
+
+  await saveWalletOptionHandler([wallet], options);
+
+  await execOptionHandler([wallet], options);
+};
+
+export const evmRecoverHandler = async (filePath, options) => {
+  const data = readFileSync(filePath);
+  const answers = await inquirer.prompt(passwordQuestions);
+  const wallet = eth.recoverFromEncryptJson(answers.password, data);
+
+  await execOptionHandler([wallet], options);
 };
