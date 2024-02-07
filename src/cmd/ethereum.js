@@ -10,7 +10,7 @@ import { EvmWallet } from '../chains/index.js';
 import { logger } from '../utils/logger.js';
 import { passwordQuestions } from './utils.js';
 
-const DEFAULT_KEYSTORE = join(homedir(), '.keystore');
+const DEFAULT_KEYSTORE = join(homedir(), '.uwallet/keystore');
 
 const eth = new EvmWallet();
 
@@ -158,3 +158,14 @@ export const evmRecoverHandler = async (filePath, options) => {
 
   await execOptionHandler([wallet], options);
 };
+
+export const listWalletHandler = (options) => {
+  let keystore_path = DEFAULT_KEYSTORE;
+  if (options.keystore) {
+    if (options.keystore !== true) {
+      keystore_path = options.keystore;
+    }
+  };
+  
+  eth.listWallets(keystore_path);
+}

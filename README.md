@@ -9,6 +9,7 @@ Usage: uwallet [options] [command]
 Universal Wallet: An universal wallet for multi blockchain player
 ```
 
+**BTW: Fucking Frontend, I just use my terminal to join web3.**
 
 ## Usage
 

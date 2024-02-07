@@ -1,10 +1,10 @@
-import { writeFileSync } from 'fs';
+import { join, dirname, basename, extname } from 'path';
+import { writeFileSync, existsSync, mkdirSync, readdir } from 'fs';
 
 // import { mnemonicToSeed } from 'bip39';
 import { ethers } from 'ethers';
 // import ethereumjsWallet from 'ethereumjs-wallet';
 // import { bufferToHex, pubToAddress } from 'ethereumjs-util';
-import { join } from 'path';
 import { logger } from '../utils/logger.js';
 
 // const { hdkey } = ethereumjsWallet;
@@ -105,6 +105,16 @@ export class EvmWallet {
     return wallet;
   }
 
+  #ensureDirectoryExistence(filePath) {
+    const d = dirname(filePath);
+    console.log
+    if (existsSync(d)) {
+      return;
+    }
+    this.#ensureDirectoryExistence(d);
+    mkdirSync(d, { recursive: true });
+  }
+
   async saveWallet(wallet, password, dir, name) {
     const encryptJson = wallet.encryptSync(password);
     let ensPrefix = '';
@@ -127,11 +137,40 @@ export class EvmWallet {
     const walletPrefix = wallet.address.slice(0, 10);
     const walletSuffix = wallet.address.slice(34);
     console.log(`- wallet ${walletPrefix}..${walletSuffix} is saved to: ${filePath.toString()}`);
+    this.#ensureDirectoryExistence(filePath)
     this.keyMap[wallet.address] = filePath;
     writeFileSync(filePath, encryptJson);
 
     // save keyMap
-    if (wallet.mnemonic) writeFileSync(mmPath, wallet.mnemonic.phrase);
+    // if (wallet.mnemonic) writeFileSync(mmPath, wallet.mnemonic.phrase);
+  }
+
+  listWallets(keystore_path) {
+    let accountCount = 0;
+    readdir(keystore_path, { withFileTypes: true }, (err, dirents) => {
+      if (err) {
+          console.error('Error accessing directory: ', err);
+          return;
+      }
+
+      dirents.forEach(dirent => {
+          const fullPath = join(keystore_path, dirent.name);
+          if (dirent.isDirectory()) {
+            return;
+          } else {
+            const walletInfos = basename(fullPath, extname((fullPath)))
+            const walletInfo = walletInfos.split('-');
+            if (walletInfo.length > 1) {
+              console.log(`- ${walletInfo[0]}:\t ${walletInfo[1]}`);
+            } else if (walletInfo.length == 1) {
+              console.log(`- Account ${accountCount}:\t ${walletInfo[0]}`);
+            } else {
+              console.error("invalid wallet info")
+            }
+            accountCount++;
+          }
+      });
+  });
   }
 
   print_wallet_info(w) {
