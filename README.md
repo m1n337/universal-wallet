@@ -167,3 +167,5 @@ private_key_env=0x3df17b24ca411648b993213ff8a3c7b46936df18a0ce6cf3aca574728e2869
 - [ ] support Bitcoin wallet
 
 - [ ] support Solona wallet
+
+- [ ] support Passphrase

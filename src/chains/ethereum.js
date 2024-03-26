@@ -42,7 +42,7 @@ export class EvmWallet {
     const wallet = new ethers.Wallet(pk, this.provider);
     // logger.info('The wallet is derived from the privarte key: ', wallet.address);
     console.log('- Successfully imported your wallet from the private key:');
-    this.print_wallet_info(wallet);
+    print_evm_wallet_info(wallet);
 
     return wallet;
   }
@@ -62,7 +62,7 @@ export class EvmWallet {
 
     const wallet = ethers.Wallet.fromPhrase(mnemonic, this.provider);
     console.log('- Successfully imported your wallet from mnemonic:');
-    this.print_wallet_info(wallet);
+    print_evm_wallet_info(wallet);
 
     return wallet;
   }
@@ -70,7 +70,7 @@ export class EvmWallet {
   #generateWallet() {
     const wallet = ethers.HDNodeWallet.createRandom();
     console.log('- Successfully generated wallet:');
-    this.print_wallet_info(wallet);
+    print_evm_wallet_info(wallet);
     return wallet;
   }
 
@@ -101,7 +101,7 @@ export class EvmWallet {
     const w = ethers.Wallet.fromEncryptedJsonSync(encryptJson, password);
     const wallet = w.connect(this.provider);
     console.log('- Successful recovered your wallet:');
-    this.print_wallet_info(wallet);
+    print_evm_wallet_info(wallet);
     return wallet;
   }
 
@@ -172,9 +172,10 @@ export class EvmWallet {
       });
   });
   }
+}
 
-  print_wallet_info(w) {
-    let maxLen;
+export const print_evm_wallet_info = (w, maxLen) => {
+  if (maxLen === undefined) {
     if (w.mnemonic) {
       maxLen = w.mnemonic.phrase.length + 22;
     } else {
@@ -185,6 +186,12 @@ export class EvmWallet {
     console.log(`|>   [LOG] address: ${w.address}${' '.repeat(maxLen - 57)}|`);
     if (w.mnemonic) console.log(`|>   [LOG] *mnemonic: ${w.mnemonic?.phrase}     |`);
     console.log(`|>   [LOG] *private key: ${w.privateKey}${' '.repeat(maxLen - 86)}|`);
+    console.log(sep);
+  } else {
+    const sep = `  ${'-'.repeat(maxLen + 3)}`;
+    console.log(`|>   [LOG] evm address: ${w.address}${' '.repeat(maxLen - 61)}|`);
+    if (w.mnemonic) console.log(`|>   [LOG] *mnemonic: ${w.mnemonic?.phrase}${' '.repeat(maxLen - 17 - w.mnemonic?.phrase.length)}|`);
+    console.log(`|>   [LOG] *evm private key: ${w.privateKey}${' '.repeat(maxLen - 90)}|`);
     console.log(sep);
   }
 }
