@@ -107,7 +107,7 @@ export class EvmWallet {
 
   #ensureDirectoryExistence(filePath) {
     const d = dirname(filePath);
-    console.log
+
     if (existsSync(d)) {
       return;
     }

@@ -155,7 +155,7 @@ private_key_env=0x3df17b24ca411648b993213ff8a3c7b46936df18a0ce6cf3aca574728e2869
 ## TODO
 
 - [x] support EVM wallet
-    - feature: generate randome wallet
+    - feature: generate random wallets
     - feature: import wallet from mnemonic / private key
     - feature: recover wallet from encrypt keystore file
     - feature: inject private key into the sub process and execute any cmd
@@ -167,5 +167,9 @@ private_key_env=0x3df17b24ca411648b993213ff8a3c7b46936df18a0ce6cf3aca574728e2869
 - [ ] support Bitcoin wallet
 
 - [ ] support Solona wallet
+  - feature: generate random wallets
+  - feature: import wallet from mnemonic / private key
+  - feature: recover wallet from encrypt keystore file
+  - feature: sign / send transaction
 
 - [ ] support Passphrase
